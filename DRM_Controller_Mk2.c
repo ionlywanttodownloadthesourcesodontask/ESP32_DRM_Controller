@@ -40,8 +40,8 @@
 #define ARM_THRESHOLD   1700        /* ch4 must be at or above this to drive */
 #define BUMP_THRESHOLD  1700        /* ch5 rising past this triggers a bump */
 #define BUMP_MS         20
-#define FWD_LIMIT_PCT   75
-#define REV_LIMIT_PCT   20
+#define FWD_LIMIT_PCT   100
+#define REV_LIMIT_PCT   50
 #define FAILSAFE_MS     100
 
 /* CRSF raw 11-bit (172..1811) -> microseconds (~988..2012), 992 == 1500 us */
@@ -96,6 +96,7 @@ void app_main(void)
         .timer      = LEDC_TIMER_0,
         .l_channel  = LEDC_CHANNEL_0,
         .r_channel  = LEDC_CHANNEL_1,
+        .freq_hz    = 3500,
         /* freq, resolution, clk left 0 -> 20 kHz, 10 bit, auto */
     };
     ESP_ERROR_CHECK(ibt2_init(&motor, &mcfg));
@@ -148,7 +149,7 @@ void app_main(void)
         } else if (throttle > DEADBAND_HI && !endstop) {
             ibt2_set_duty(&motor, IBT2_DIR_FORWARD,
                           stick_to_duty(throttle - DEADBAND_HI, fwd_max));
-        } else if (throttle < DEADBAND_LO) {
+        } else if (throttle < DEADBAND_LO && (crsf_to_us(ch.ch6) > 1500)) {
             ibt2_set_duty(&motor, IBT2_DIR_REVERSE,
                           stick_to_duty(DEADBAND_LO - throttle, rev_max));
         } else {
